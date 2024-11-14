@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model branch {
+  id                Int       @id @default(autoincrement())
+  branch_name       String    @db.VarChar(100)
+  branch_owner      Int
+  branch_address    String    @default(dbgenerated("(current_timestamp())")) @db.VarChar(100)
+  branch_is_active  Int       @default(1)
+  branch_is_deleted Int       @default(0)
+  branch_created_at DateTime  @default(now()) @db.DateTime(0)
+  user              user      @relation(fields: [branch_owner], references: [id], onUpdate: Restrict, map: "branch_ibfk_1")
+  members           members[]
+  session           session[]
+
+  @@index([branch_owner], map: "branch_owner")
+  @@index([id], map: "id")
+}
+
+model member_attachment {
+  id                                                   Int       @id @default(autoincrement())
+  member_id                                            Int
+  attachment_path                                      Int
+  attachment_deleted_at                                Int       @default(0)
+  attachment_created_at                                DateTime  @default(now()) @db.DateTime(0)
+  members_members_member_attachmentTomember_attachment members[] @relation("members_member_attachmentTomember_attachment")
+}
+
+model member_plan {
+  id                                       Int       @id @default(autoincrement())
+  plan_title                               String    @unique(map: "plan_title") @db.VarChar(100)
+  plan_price                               Int
+  plan_duration_per_month                  Int
+  plan_is_deleted                          Int       @default(0)
+  plan_created_at                          DateTime  @default(now()) @db.DateTime(0)
+  members_members_member_planTomember_plan members[] @relation("members_member_planTomember_plan")
+}
+
+model members {
+  id                                                             Int                @id @default(autoincrement())
+  member_name                                                    String             @db.VarChar(100)
+  member_age                                                     Int
+  member_gender                                                  String             @db.VarChar(50)
+  member_address                                                 String             @db.VarChar(200)
+  member_branch                                                  Int
+  member_expiration_date                                         DateTime?          @db.DateTime(0)
+  member_plan                                                    Int
+  member_membership_expired                                      Int?               @default(0)
+  member_attachment                                              Int?
+  member_is_deleted                                              Int                @default(0)
+  member_created_at                                              DateTime           @default(now()) @db.DateTime(0)
+  member_plan_data                                               member_plan        @relation("members_member_planTomember_plan", fields: [member_plan], references: [id], onUpdate: Restrict, map: "members_ibfk_1")
+  branch                                                         branch             @relation(fields: [member_branch], references: [id], onUpdate: Restrict, map: "members_ibfk_2")
+  member_attachment_members_member_attachmentTomember_attachment member_attachment? @relation("members_member_attachmentTomember_attachment", fields: [member_attachment], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "members_ibfk_3")
+  session                                                        session[]
+
+  @@index([member_attachment], map: "member_attachment")
+  @@index([member_branch], map: "member_branch")
+  @@index([member_plan], map: "member_plan")
+}
+
+model session {
+  id                  Int       @id @default(autoincrement())
+  session_name        String    @db.VarChar(100)
+  session_member_id   Int?
+  session_end         DateTime? @db.DateTime(0)
+  session_additionals String?   @db.LongText
+  session_branch      Int
+  session_fee         Int?
+  session_is_paid     Int       @default(2)
+  session_is_deleted  Int       @default(0)
+  session_created_at  DateTime  @default(now()) @db.DateTime(0)
+  session_isActive    Int?      @default(1)
+  session_gender      String?   @db.VarChar(100)
+  members             members?  @relation(fields: [session_member_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "session_ibfk_1")
+  branch              branch    @relation(fields: [session_branch], references: [id], onUpdate: Restrict, map: "session_ibfk_2")
+
+  @@index([id, session_end], map: "id")
+  @@index([session_branch], map: "session_branch")
+  @@index([session_member_id], map: "session_member_id")
+}
+
+model user {
+  id                Int               @id @default(autoincrement())
+  name              String?           @db.VarChar(255)
+  email             String            @unique(map: "User_email_key") @db.VarChar(255)
+  subscription_id   Int
+  is_deleted        Int               @default(0)
+  createdAt         DateTime          @default(now()) @db.Timestamp(6)
+  lastActivity      DateTime          @default(now()) @db.Timestamp(6)
+  branch            branch[]
+  user_subscription user_subscription @relation(fields: [subscription_id], references: [id], onUpdate: Restrict, map: "user_ibfk_1")
+
+  @@index([subscription_id], map: "subscription_id")
+}
+
+model user_subscription {
+  id                              Int      @id @default(autoincrement())
+  subscription_title              String   @db.VarChar(100)
+  subscription_price              Int
+  subscription_duration_per_month Int
+  subscription_is_deleted         DateTime @default(now()) @db.DateTime(0)
+  subscription_created_at         DateTime @default(now()) @db.DateTime(0)
+  user                            user[]
+}

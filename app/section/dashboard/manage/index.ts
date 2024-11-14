@@ -1,0 +1,1 @@
+export {default as AccountManage} from './account/account-manage'
